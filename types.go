@@ -19,19 +19,21 @@ type StrictParams struct {
 }
 
 type Gocal struct {
-	scanner        *bufio.Scanner
-	Events         []Event
-	SkipBounds     bool
-	Strict         StrictParams
-	buffer         *Event
-	Start          *time.Time
-	End            *time.Time
-	Method         string
-	AllDayEventsTZ *time.Location
+	scanner    *bufio.Scanner
+	Events     []Event
+	SkipBounds bool
+	Strict     StrictParams
+	buffer     *Event
+	Start      *time.Time
+	End        *time.Time
+	Method     string
+	CalenderTZ *time.Location
 }
 
 const (
 	ContextRoot = iota
+	ContextCalendar
+	ContextTimezone
 	ContextEvent
 	ContextUnknown
 )
@@ -57,7 +59,7 @@ func (gc *Gocal) IsInRange(d Event) bool {
 func (gc *Gocal) IsRecurringInstanceOverriden(instance *Event) bool {
 	for _, e := range gc.Events {
 		if e.Uid == instance.Uid {
-			rid, _ := parser.ParseTime(e.RecurrenceID, map[string]string{}, parser.TimeStart, false, gc.AllDayEventsTZ)
+			rid, _ := parser.ParseTime(e.RecurrenceID, map[string]string{}, parser.TimeStart, false, gc.CalenderTZ)
 			if rid.Equal(*instance.Start) {
 				return true
 			}

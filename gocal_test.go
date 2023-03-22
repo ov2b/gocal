@@ -328,6 +328,64 @@ func Test_UnknownBlocks(t *testing.T) {
 	assert.Equal(t, "My Place", gc.Events[0].Location)
 }
 
+const wrTimezoneICS = `BEGIN:VCALENDAR
+X-WR-TIMEZONE:Asia/Omsk
+BEGIN:VEVENT
+UID:0001@example.net
+DTSTAMP:20190612T135103Z
+DTSTART:20190612T130101Z
+DTEND:20190612T135959Z
+DESCRIPTION:event
+END:VEVENT
+END:VCALENDAR`
+
+func Test_WrTimezone(t *testing.T) {
+	gc := NewParser(strings.NewReader(wrTimezoneICS))
+	tz, _ := time.LoadLocation("Asia/Omsk")
+	start := time.Date(2019, 6, 12, 0, 0, 0, 0, tz)
+	gc.Start = &start
+	end := time.Date(2019, 6, 12, 23, 59, 59, 0, tz)
+	gc.End = &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+	assert.Equal(t, tz, gc.CalenderTZ)
+	assert.Equal(t, 1, len(gc.Events))
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 51, 3, 0, tz), *gc.Events[0].Stamp)
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 1, 1, 0, tz), *gc.Events[0].Start)
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 59, 59, 0, tz), *gc.Events[0].End)
+}
+
+const vTimezoneICS = `BEGIN:VCALENDAR
+BEGIN:VTIMEZONE
+TZID:Asia/Omsk
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:0001@example.net
+DTSTAMP:20190612T135103Z
+DTSTART:20190612T130101Z
+DTEND:20190612T135959Z
+DESCRIPTION:event
+END:VEVENT
+END:VCALENDAR`
+
+func Test_VTimezone(t *testing.T) {
+	gc := NewParser(strings.NewReader(vTimezoneICS))
+	tz, _ := time.LoadLocation("Asia/Omsk")
+	start := time.Date(2019, 6, 12, 0, 0, 0, 0, tz)
+	gc.Start = &start
+	end := time.Date(2019, 6, 12, 23, 59, 59, 0, tz)
+	gc.End = &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+	assert.Equal(t, tz, gc.CalenderTZ)
+	assert.Equal(t, 1, len(gc.Events))
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 51, 3, 0, tz), *gc.Events[0].Stamp)
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 1, 1, 0, tz), *gc.Events[0].Start)
+	assert.Equal(t, time.Date(2019, 6, 12, 19, 59, 59, 0, tz), *gc.Events[0].End)
+}
+
 const invalidICS = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 DTSTART;TZID=Europe/Paris:20190101T090000

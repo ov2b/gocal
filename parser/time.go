@@ -16,10 +16,10 @@ var (
 	TZMapper func(s string) (*time.Location, error)
 )
 
-func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ *time.Location) (*time.Time, error) {
+func ParseTime(s string, params map[string]string, ty int, allday bool, calendarTz *time.Location) (*time.Time, error) {
 	var err error
-	var tz *time.Location
-
+	var parseTz *time.Location
+	var resultTz = calendarTz
 	format := ""
 
 	if params["VALUE"] == "DATE" || len(s) == 8 {
@@ -29,12 +29,12 @@ func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ
 		*/
 		t, err := time.Parse("20060102", s)
 		if ty == TimeStart {
-			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, allDayTZ)
+			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, calendarTz)
 		} else if ty == TimeEnd {
 			if allday {
-				t = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999, allDayTZ)
+				t = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999, calendarTz)
 			} else {
-				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, allDayTZ).Add(-1 * time.Millisecond)
+				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, calendarTz).Add(-1 * time.Millisecond)
 			}
 		}
 
@@ -44,29 +44,33 @@ func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ
 	if strings.HasSuffix(s, "Z") {
 		// If string end in 'Z', timezone is UTC
 		format = "20060102T150405Z"
-		tz, _ = time.LoadLocation("UTC")
+		parseTz, _ = time.LoadLocation("UTC")
 	} else if params["TZID"] != "" {
 		var err error
 
 		// If TZID param is given, parse in the timezone unless it is not valid
 		format = "20060102T150405"
 		if TZMapper != nil {
-			tz, err = TZMapper(params["TZID"])
+			parseTz, err = TZMapper(params["TZID"])
 		}
 		if TZMapper == nil || err != nil {
-			tz, err = LoadTimezone(params["TZID"])
+			parseTz, err = LoadTimezone(params["TZID"])
 		}
 
 		if err != nil {
-			tz, _ = time.LoadLocation("UTC")
+			parseTz = calendarTz
 		}
+		resultTz = parseTz // TZID overrides calendar's TZ
 	} else {
 		// Else, consider the timezone is local the parser
 		format = "20060102T150405"
-		tz = time.Local
+		parseTz = time.Local
 	}
 
-	t, err := time.ParseInLocation(format, s, tz)
+	t, err := time.ParseInLocation(format, s, parseTz)
+	if err == nil {
+		t = t.In(resultTz)
+	}
 
 	return &t, err
 }
