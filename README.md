@@ -6,6 +6,8 @@ Gocal takes an io.Reader and produces an array of `Event`s from it.
 
 Event are parsed between two given dates (`Gocal.Start` and `Gocal.End`, 3 months by default). Any event outside this range will be ignored. This behavior can be disabled by setting `SkipBounds` to `true` in the `Gocal` struct. Please note that the behavior will still be enacted for recurring event, to prevent infinite parsing.
 
+This version of the parser adds the [parsing of calender timezone from gelin](https://github.com/gelin/gocal/tree/timezone) to a newer version of [apognu's gocal parser](https://github.com/apognu/gocal) because i needed both calender timezones and the option to add a custom TZMapper.
+
 ## Usage
 
 ```go
@@ -51,7 +53,7 @@ gocal.SetTZMapper(func(s string) (*time.Location, error) {
 
 If this callback returns an `error`, the usual method of parsing the timezone will be tried. If both those methods fail, the date and time will be considered UTC.
 
-### Custom X-* properties
+### Custom X-\* properties
 
 Any property starting with `X-` is considered a custom property and is unmarshalled in the `event.CustomAttributes` map of string to string. For instance, a `X-LABEL` would be accessible through `event.CustomAttributes["X-LABEL"]`.
 
@@ -67,26 +69,27 @@ This was tested only lightly, I might not cover all the cases.
 
 By default, any error in parsing an event will result in the whole feed being aborted altogether (this includes missing or invalid attributes). You can change strict mode's behavior by changing the `Strict.Mode` attribute of the `Gocal` struct, with the following behavior:
 
- * `StrictModeFailFeed` - **default**, abort parsing of the whole feed
- * `StrictModeFailEvent` - skip the current event
- * `StrictModeFailAttribute` - skip parsing of the failing attribute, set the `Valid` attribute of the event to `false`
+- `StrictModeFailFeed` - **default**, abort parsing of the whole feed
+- `StrictModeFailEvent` - skip the current event
+- `StrictModeFailAttribute` - skip parsing of the failing attribute, set the `Valid` attribute of the event to `false`
 
 ## Limitations
 
 I do not pretend this abides by [RFC 5545](https://tools.ietf.org/html/rfc5545), this only covers parts I needed to be parsed for my own personal use. Among other, most property parameters are not handled by the library, and, for now, only the following properties are parsed:
 
- * `UID`
- * `SUMMARY` / `DESCRIPTION`
- * `DTSTART` / `DTEND` / `DURATION` (day-long, local, UTC and `TZID`d)
- * `DTSTAMP` / `CREATED` / `LAST-MODIFIED`
- * `LOCATION`
- * `STATUS`
- * `ORGANIZER` (`CN`; `DIR` and value)
- * `ATTENDEE`s (`CN`, `DIR`, `PARTSTAT` and value)
- * `ATTACH` (`FILENAME`, `ENCODING`, `VALUE`, `FMTTYPE` and value)
- * `CATEGORIES`
- * `GEO`
- * `RRULE`
- * `X-*`
+- `UID`
+- `SUMMARY` / `DESCRIPTION`
+- `DTSTART` / `DTEND` / `DURATION` (day-long, local, UTC and `TZID`d)
+- `DTSTAMP` / `CREATED` / `LAST-MODIFIED`
+- `LOCATION`
+- `STATUS`
+- `ORGANIZER` (`CN`; `DIR` and value)
+- `ATTENDEE`s (`CN`, `DIR`, `PARTSTAT` and value)
+- `ATTACH` (`FILENAME`, `ENCODING`, `VALUE`, `FMTTYPE` and value)
+- `CATEGORIES`
+- `GEO`
+- `RRULE`
+- `X-*`
 
-Also, we ignore whatever's not a `VEVENT`.
+Also, we ignore whatever's not a `VEVENT` except `X-WR-TIMEZONE` and `VTIMEZONE`
+in the `VCALENDER`.
