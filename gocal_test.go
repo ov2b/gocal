@@ -349,7 +349,7 @@ func Test_WrTimezone(t *testing.T) {
 	err := gc.Parse()
 
 	assert.Nil(t, err)
-	assert.Equal(t, tz, gc.CalenderTZ)
+	assert.Equal(t, tz, gc.calenderTZ)
 	assert.Equal(t, 1, len(gc.Events))
 	assert.Equal(t, time.Date(2019, 6, 12, 19, 51, 3, 0, tz), *gc.Events[0].Stamp)
 	assert.Equal(t, time.Date(2019, 6, 12, 19, 1, 1, 0, tz), *gc.Events[0].Start)
@@ -379,11 +379,37 @@ func Test_VTimezone(t *testing.T) {
 	err := gc.Parse()
 
 	assert.Nil(t, err)
-	assert.Equal(t, tz, gc.CalenderTZ)
+	assert.Equal(t, tz, gc.calenderTZ)
 	assert.Equal(t, 1, len(gc.Events))
 	assert.Equal(t, time.Date(2019, 6, 12, 19, 51, 3, 0, tz), *gc.Events[0].Stamp)
 	assert.Equal(t, time.Date(2019, 6, 12, 19, 1, 1, 0, tz), *gc.Events[0].Start)
 	assert.Equal(t, time.Date(2019, 6, 12, 19, 59, 59, 0, tz), *gc.Events[0].End)
+}
+
+const localTimezoneICS = `BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:0001@example.net
+DTSTART;VALUE=DATE:20180117
+DTEND;VALUE=DATE:20180119
+DESCRIPTION:event
+END:VEVENT
+END:VCALENDAR`
+
+func Test_LocalTimezone(t *testing.T) {
+	gc := NewParser(strings.NewReader(localTimezoneICS))
+	tz, _ := time.LoadLocation("Europe/Berlin")
+	start := time.Date(2019, 6, 12, 0, 0, 0, 0, tz)
+	gc.Start = &start
+	end := time.Date(2019, 6, 12, 23, 59, 59, 0, tz)
+	gc.End = &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+	assert.Equal(t, tz, gc.calenderTZ)
+	assert.Equal(t, 1, len(gc.Events))
+	assert.Equal(t, time.Date(2018, 1, 17, 0, 0, 0, 0, tz), *gc.Events[0].Stamp)
+	assert.Equal(t, time.Date(2018, 1, 17, 0, 0, 0, 0, tz), *gc.Events[0].Start)
+	assert.Equal(t, time.Date(2018, 1, 19, 59, 59, 59, 999, tz), *gc.Events[0].End)
 }
 
 const invalidICS = `BEGIN:VCALENDAR

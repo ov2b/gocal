@@ -19,7 +19,7 @@ func NewParser(r io.Reader) *Gocal {
 			Mode: StrictModeFailFeed,
 		},
 		SkipBounds: false,
-		CalenderTZ: time.UTC,
+		calenderTZ: time.UTC,
 	}
 }
 
@@ -71,7 +71,7 @@ func (gc *Gocal) Parse() error {
 			// as events spanning 24 hours.
 			if gc.buffer.RawStart.Value == gc.buffer.RawEnd.Value {
 				if value, ok := gc.buffer.RawEnd.Params["VALUE"]; ok && value == "DATE" {
-					gc.buffer.End, err = parser.ParseTime(gc.buffer.RawEnd.Value, gc.buffer.RawEnd.Params, parser.TimeEnd, true, gc.CalenderTZ)
+					gc.buffer.End, err = parser.ParseTime(gc.buffer.RawEnd.Value, gc.buffer.RawEnd.Params, parser.TimeEnd, true, gc.calenderTZ)
 				}
 			}
 
@@ -192,7 +192,7 @@ func (gc *Gocal) parseCalendar(l *Line) error {
 			return fmt.Errorf("could not recognize %s: %s", l.Key, l.Value)
 		}
 
-		gc.CalenderTZ = calendarTz
+		gc.calenderTZ = calendarTz
 	}
 
 	return nil
@@ -216,7 +216,7 @@ func (gc *Gocal) parseTimezone(l *Line) error {
 			return fmt.Errorf("could not recognize %s: %s", l.Key, l.Value)
 		}
 
-		gc.CalenderTZ = calendarTz
+		gc.calenderTZ = calendarTz
 	}
 
 	return nil
@@ -254,13 +254,13 @@ func (gc *Gocal) parseEvent(l *Line) error {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
 
-		gc.buffer.Start, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.CalenderTZ)
+		gc.buffer.Start, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.calenderTZ)
 		gc.buffer.RawStart = RawDate{Value: l.Value, Params: l.Params}
 		if err != nil {
 			return fmt.Errorf("could not parse %s: %s", l.Key, l.Value)
 		}
 	case "DTEND":
-		gc.buffer.End, err = parser.ParseTime(l.Value, l.Params, parser.TimeEnd, false, gc.CalenderTZ)
+		gc.buffer.End, err = parser.ParseTime(l.Value, l.Params, parser.TimeEnd, false, gc.calenderTZ)
 		gc.buffer.RawEnd = RawDate{Value: l.Value, Params: l.Params}
 		if err != nil {
 			return fmt.Errorf("could not parse %s: %s", l.Key, l.Value)
@@ -279,7 +279,7 @@ func (gc *Gocal) parseEvent(l *Line) error {
 		end := gc.buffer.Start.Add(*duration)
 		gc.buffer.End = &end
 	case "DTSTAMP":
-		gc.buffer.Stamp, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.CalenderTZ)
+		gc.buffer.Stamp, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.calenderTZ)
 		if err != nil {
 			return fmt.Errorf("could not parse %s: %s", l.Key, l.Value)
 		}
@@ -288,7 +288,7 @@ func (gc *Gocal) parseEvent(l *Line) error {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
 
-		gc.buffer.Created, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.CalenderTZ)
+		gc.buffer.Created, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.calenderTZ)
 		if err != nil {
 			return fmt.Errorf("could not parse %s: %s", l.Key, l.Value)
 		}
@@ -297,7 +297,7 @@ func (gc *Gocal) parseEvent(l *Line) error {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
 
-		gc.buffer.LastModified, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.CalenderTZ)
+		gc.buffer.LastModified, err = parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.calenderTZ)
 		if err != nil {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
@@ -319,7 +319,7 @@ func (gc *Gocal) parseEvent(l *Line) error {
 			Reference: https://icalendar.org/iCalendar-RFC-5545/3-8-5-1-exception-date-times.html
 			Several parameters are allowed.  We should pass parameters we have
 		*/
-		d, err := parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.CalenderTZ)
+		d, err := parser.ParseTime(l.Value, l.Params, parser.TimeStart, false, gc.calenderTZ)
 		if err == nil {
 			gc.buffer.ExcludeDates = append(gc.buffer.ExcludeDates, *d)
 		}
@@ -429,4 +429,8 @@ func (gc *Gocal) checkEvent() error {
 
 func SetTZMapper(cb func(s string) (*time.Location, error)) {
 	parser.TZMapper = cb
+}
+
+func SetLocalTimezone(tz *time.Location) {
+	parser.LocalTz = tz
 }
