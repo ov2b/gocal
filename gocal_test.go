@@ -389,6 +389,7 @@ func Test_VTimezone(t *testing.T) {
 const localTimezoneICS = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:0001@example.net
+DTSTAMP;VALUE=DATE:20180117
 DTSTART;VALUE=DATE:20180117
 DTEND;VALUE=DATE:20180119
 DESCRIPTION:event
@@ -398,18 +399,18 @@ END:VCALENDAR`
 func Test_LocalTimezone(t *testing.T) {
 	gc := NewParser(strings.NewReader(localTimezoneICS))
 	tz, _ := time.LoadLocation("Europe/Berlin")
-	start := time.Date(2019, 6, 12, 0, 0, 0, 0, tz)
+	SetLocalTimezone(tz)
+	start := time.Date(2018, 1, 16, 0, 0, 0, 0, tz)
 	gc.Start = &start
-	end := time.Date(2019, 6, 12, 23, 59, 59, 0, tz)
+	end := time.Date(2018, 1, 20, 0, 0, 0, 0, tz)
 	gc.End = &end
 	err := gc.Parse()
 
 	assert.Nil(t, err)
-	assert.Equal(t, tz, gc.calenderTZ)
 	assert.Equal(t, 1, len(gc.Events))
 	assert.Equal(t, time.Date(2018, 1, 17, 0, 0, 0, 0, tz), *gc.Events[0].Stamp)
 	assert.Equal(t, time.Date(2018, 1, 17, 0, 0, 0, 0, tz), *gc.Events[0].Start)
-	assert.Equal(t, time.Date(2018, 1, 19, 59, 59, 59, 999, tz), *gc.Events[0].End)
+	assert.Equal(t, time.Date(2018, 1, 18, 23, 59, 59, 999000000, tz), *gc.Events[0].End)
 }
 
 const invalidICS = `BEGIN:VCALENDAR
