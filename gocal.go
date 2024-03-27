@@ -97,7 +97,17 @@ func (gc *Gocal) Parse() error {
 			}
 
 			if gc.buffer.IsRecurring {
-				rInstances = append(rInstances, gc.ExpandRecurringEvent(gc.buffer)...)
+				additionalInstances, err := gc.ExpandRecurringEvent(gc.buffer)
+				if err != nil {
+					switch gc.Strict.Mode {
+					case StrictModeFailFeed:
+						return fmt.Errorf(fmt.Sprintf("error expanding event with UID '%s': %s", gc.buffer.Uid, err))
+					case StrictModeFailEvent:
+						continue
+					}
+				}
+
+				rInstances = append(rInstances, additionalInstances...)
 			} else {
 				if gc.buffer.End == nil || gc.buffer.Start == nil {
 					continue
@@ -302,12 +312,13 @@ func (gc *Gocal) parseEvent(l *Line) error {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
 	case "RRULE":
-		if len(gc.buffer.RecurrenceRule) != 0 {
+		if len(gc.buffer.RecurrenceRuleParams) != 0 {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
 		}
 
 		gc.buffer.IsRecurring = true
-		gc.buffer.RecurrenceRule, err = parser.ParseRecurrenceRule(l.Value)
+		gc.buffer.RecurrenceRuleParams, err = parser.ParseRecurrenceRule(l.Value)
+		gc.buffer.recurrenceRuleString = l.Value
 	case "RECURRENCE-ID":
 		if gc.buffer.RecurrenceID != "" {
 			return fmt.Errorf("could not parse duplicate %s: %s", l.Key, l.Value)
