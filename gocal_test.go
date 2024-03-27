@@ -284,6 +284,137 @@ func Test_ReccuringRuleWithMultipleExdate(t *testing.T) {
 
 }
 
+// Event repeats every last saturday of the month
+const recurringICSWithBySetPos = `BEGIN:VCALENDAR
+X-WR-TIMEZONE:Europe/Berlin
+BEGIN:VTIMEZONE
+TZID:Europe/Berlin
+X-LIC-LOCATION:Europe/Berlin
+BEGIN:DAYLIGHT
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:plop
+SUMMARY:Every last saturday of the month
+DTSTAMP:20151116T133227Z
+DTSTART;TZID=Europe/Berlin:20230429T150000
+DTEND;TZID=Europe/Berlin:20230429T210000
+RRULE:FREQ=MONTHLY;BYDAY=SA;BYSETPOS=-1
+END:VEVENT
+END:VCALENDAR`
+
+func Test_ReccuringRuleWithBySetPos(t *testing.T) {
+	start, end := time.Date(2024, 1, 1, 0, 0, 0, 0, time.Local), time.Date(2024, 8, 1, 0, 0, 0, 0, time.Local)
+
+	gc := NewParser(strings.NewReader(recurringICSWithBySetPos))
+	gc.Start, gc.End = &start, &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+	assert.Equal(t, 7, len(gc.Events))
+	assert.Equal(t, "Every last saturday of the month", gc.Events[0].Summary)
+}
+
+// Event repeats every first saturday of the month
+const recurringICSWithPrefixedByDay = `BEGIN:VCALENDAR
+X-WR-TIMEZONE:Europe/Berlin
+BEGIN:VTIMEZONE
+TZID:Europe/Berlin
+X-LIC-LOCATION:Europe/Berlin
+BEGIN:DAYLIGHT
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:plop
+SUMMARY:Every first saturday of the month
+DTSTAMP:20151116T133227Z
+DTSTART;TZID=Europe/Berlin:20230429T150000
+DTEND;TZID=Europe/Berlin:20230429T210000
+RRULE:FREQ=MONTHLY;BYDAY=1SA
+END:VEVENT
+END:VCALENDAR`
+
+func Test_ReccuringRuleWithPrefixedByDay(t *testing.T) {
+	start, end := time.Date(2024, 1, 1, 0, 0, 0, 0, time.Local), time.Date(2024, 8, 1, 0, 0, 0, 0, time.Local)
+
+	gc := NewParser(strings.NewReader(recurringICSWithPrefixedByDay))
+	gc.Start, gc.End = &start, &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, 7, len(gc.Events))
+	assert.Equal(t, "Every first saturday of the month", gc.Events[0].Summary)
+}
+
+// Event repeats every last saturday of the month
+const recurringICSWithNegativeByDay = `BEGIN:VCALENDAR
+X-WR-TIMEZONE:Europe/Berlin
+BEGIN:VTIMEZONE
+TZID:Europe/Berlin
+X-LIC-LOCATION:Europe/Berlin
+BEGIN:DAYLIGHT
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:plop
+SUMMARY:Every last saturday of the month
+DTSTAMP:20151116T133227Z
+DTSTART;TZID=Europe/Berlin:20230429T150000
+DTEND;TZID=Europe/Berlin:20230429T210000
+RRULE:FREQ=MONTHLY;BYDAY=-1SA
+END:VEVENT
+END:VCALENDAR`
+
+func Test_ReccuringRuleWithNegativeByDay(t *testing.T) {
+	start, end := time.Date(2024, 1, 1, 0, 0, 0, 0, time.Local), time.Date(2024, 8, 1, 0, 0, 0, 0, time.Local)
+
+	gc := NewParser(strings.NewReader(recurringICSWithNegativeByDay))
+	gc.Start, gc.End = &start, &end
+	err := gc.Parse()
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, 7, len(gc.Events))
+	assert.Equal(t, "Every last saturday of the month", gc.Events[0].Summary)
+}
+
 const unknownICS = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 DTSTART;VALUE=DATE:20180117
