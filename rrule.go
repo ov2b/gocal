@@ -21,15 +21,20 @@ func (gc *Gocal) ExpandRecurringEvent(buf *Event) ([]Event, error) {
 	s.DTStart(*buf.Start)
 	s.SetExDates(buf.ExcludeDates)
 
+	endOffset := buf.End.Sub(*buf.Start)
+
 	evs := []Event{}
 	for _, occ := range s.Between(*gc.Start, *gc.End, true) {
+		start := occ
+		end := start.Add(endOffset)
+
 		e := *buf
-		e.Start = &occ
-		end := occ.Add(buf.End.Sub(*buf.Start))
+		e.Start = &start
 		e.End = &end
 		e.Uid = buf.Uid
 
 		evs = append(evs, e)
 	}
+
 	return evs, nil
 }
