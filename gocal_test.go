@@ -84,6 +84,19 @@ func Test_ParseLine(t *testing.T) {
 	assert.Equal(t, map[string]string{"KEY1": "value1", "KEY2": "value2"}, l.Params)
 }
 
+func Test_ParseLine_Multiple_Colons(t *testing.T) {
+	gc := NewParser(strings.NewReader(`DTSTART;TZID="(UTC+01:00) Amsterdam, Berlin, Bern, Rom, Stockholm, Wien":20241014T150000`))
+	gc.scanner.Scan()
+	l, err, done := gc.parseLine()
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, done)
+
+	assert.Equal(t, "DTSTART", l.Key)
+	assert.Equal(t, "20241014T150000", l.Value)
+	assert.Equal(t, map[string]string{"TZID": `"(UTC+01:00) Amsterdam, Berlin, Bern, Rom, Stockholm, Wien"`}, l.Params)
+}
+
 // Event repeats every second monday and tuesday
 // Instance of January, 29th is excluded
 // Instance of January, 1st is changed
