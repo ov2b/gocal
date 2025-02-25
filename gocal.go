@@ -27,6 +27,14 @@ func NewParser(r io.Reader) *Gocal {
 }
 
 func (gc *Gocal) Parse() error {
+	defer func() error {
+		if r := recover(); r != nil {
+			return fmt.Errorf("panic recovered in gocal parse: %v", r)
+
+		}
+		return nil
+	}()
+
 	if gc.Start == nil {
 		start := time.Now().Add(-1 * 24 * time.Hour)
 		gc.Start = &start
