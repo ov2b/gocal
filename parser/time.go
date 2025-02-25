@@ -18,8 +18,7 @@ var (
 
 func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ *time.Location) (*time.Time, error) {
 	var err error
-	var parseTz *time.Location
-	var resultTz = allDayTZ
+	var tz *time.Location
 
 	format := ""
 
@@ -45,33 +44,29 @@ func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ
 	if strings.HasSuffix(s, "Z") {
 		// If string end in 'Z', timezone is UTC
 		format = "20060102T150405Z"
-		parseTz, _ = time.LoadLocation("UTC")
+		tz, _ = time.LoadLocation("UTC")
 	} else if params["TZID"] != "" {
 		var err error
 
 		// If TZID param is given, parse in the timezone unless it is not valid
 		format = "20060102T150405"
 		if TZMapper != nil {
-			parseTz, err = TZMapper(params["TZID"])
+			tz, err = TZMapper(params["TZID"])
 		}
 		if TZMapper == nil || err != nil {
-			parseTz, err = LoadTimezone(params["TZID"])
+			tz, err = LoadTimezone(params["TZID"])
 		}
 
 		if err != nil {
-			parseTz, _ = time.LoadLocation("UTC")
+			tz, _ = time.LoadLocation("UTC")
 		}
-		resultTz = parseTz // TZID overrides calendar's TZ
 	} else {
 		// Else, consider the timezone is local the parser
 		format = "20060102T150405"
-		parseTz = time.Local
+		tz = time.Local
 	}
 
-	t, err := time.ParseInLocation(format, s, parseTz)
-	if err == nil {
-		t = t.In(resultTz)
-	}
+	t, err := time.ParseInLocation(format, s, tz)
 
 	return &t, err
 }

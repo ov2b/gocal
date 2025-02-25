@@ -57,15 +57,15 @@ func (gc *Gocal) Parse() error {
 			continue
 		}
 
-		if ctx.Value == ContextRoot && l.Is("BEGIN", "VCALENDAR") {
-			ctx = ctx.Nest(ContextCalendar)
-		} else if ctx.Value == ContextCalendar && l.Is("BEGIN", "VTIMEZONE") {
-			ctx = ctx.Nest(ContextTimezone)
-		} else if (ctx.Value == ContextRoot || ctx.Value == ContextCalendar) && l.Is("BEGIN", "VEVENT") {
+		if l.IsValue("VCALENDAR") {
+			continue
+		}
+
+		if ctx.Value == ContextRoot && l.Is("BEGIN", "VEVENT") {
 			ctx = ctx.Nest(ContextEvent)
 
 			gc.buffer = &Event{Valid: true, delayed: make([]*Line, 0)}
-		} else if (ctx.Value == ContextRoot || ctx.Value == ContextCalendar) && l.IsKey("METHOD") {
+		} else if ctx.Value == ContextRoot && l.IsKey("METHOD") {
 			gc.Method = l.Value
 		} else if ctx.Value == ContextEvent && l.Is("END", "VEVENT") {
 			if ctx.Previous == nil {
@@ -138,16 +138,6 @@ func (gc *Gocal) Parse() error {
 				return fmt.Errorf("got an END:%s without matching BEGIN:%s", l.Value, l.Value)
 			}
 			ctx = ctx.Previous
-		} else if ctx.Value == ContextCalendar {
-			err := gc.parseCalendar(l)
-			if err != nil {
-				return fmt.Errorf("gocal error: %s", err)
-			}
-		} else if ctx.Value == ContextTimezone {
-			err := gc.parseTimezone(l)
-			if err != nil {
-				return fmt.Errorf("gocal error: %s", err)
-			}
 		} else if ctx.Value == ContextEvent {
 			if err := gc.parseEvent(l); err != nil {
 				if _, ok := err.(DuplicateAttributeError); ok {
@@ -234,54 +224,6 @@ func splitLineTokens(line string) []string {
 		}
 	}
 	return []string{line}
-}
-
-func (gc *Gocal) parseCalendar(l *Line) error {
-	var err error
-
-	switch l.Key {
-	case "X-WR-TIMEZONE":
-		var calendarTz *time.Location
-
-		if parser.TZMapper != nil {
-			calendarTz, err = parser.TZMapper(l.Value)
-		}
-		if parser.TZMapper == nil || err != nil {
-			calendarTz, err = parser.LoadTimezone(l.Value)
-		}
-
-		if err != nil {
-			return fmt.Errorf("could not recognize %s: %s", l.Key, l.Value)
-		}
-
-		gc.AllDayEventsTZ = calendarTz
-	}
-
-	return nil
-}
-
-func (gc *Gocal) parseTimezone(l *Line) error {
-	var err error
-
-	switch l.Key {
-	case "TZID":
-		var calendarTz *time.Location
-
-		if parser.TZMapper != nil {
-			calendarTz, err = parser.TZMapper(l.Value)
-		}
-		if parser.TZMapper == nil || err != nil {
-			calendarTz, err = parser.LoadTimezone(l.Value)
-		}
-
-		if err != nil {
-			return fmt.Errorf("could not recognize %s: %s", l.Key, l.Value)
-		}
-
-		gc.AllDayEventsTZ = calendarTz
-	}
-
-	return nil
 }
 
 func (gc *Gocal) parseEvent(l *Line) error {

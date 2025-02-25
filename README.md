@@ -6,10 +6,6 @@ Gocal takes an io.Reader and produces an array of `Event`s from it.
 
 Event are parsed between two given dates (`Gocal.Start` and `Gocal.End`, 3 months by default). Any event outside this range will be ignored. This behavior can be disabled by setting `SkipBounds` to `true` in the `Gocal` struct. Please note that the behavior will still be enacted for recurring event, to prevent infinite parsing.
 
-This version of the parser adds the [parsing of calender timezone from gelin](https://github.com/gelin/gocal/tree/timezone) to a newer version of [apognu's gocal parser](https://github.com/apognu/gocal) because i needed both calender timezones and the option to add a custom TZMapper.
-
-This timezone will be added to all `DTSART` and `DTEND` values that are specified with a `DATE` type instead of `DATE-TIME`.
-
 ## Usage
 
 ```go

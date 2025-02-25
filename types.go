@@ -56,8 +56,6 @@ type Gocal struct {
 
 const (
 	ContextRoot = iota
-	ContextCalendar
-	ContextTimezone
 	ContextEvent
 	ContextUnknown
 )
