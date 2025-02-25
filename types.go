@@ -2,6 +2,7 @@ package gocal
 
 import (
 	"bufio"
+	"fmt"
 	"strings"
 	"time"
 
@@ -14,20 +15,43 @@ const (
 	StrictModeFailEvent
 )
 
+const (
+	DuplicateModeFailStrict = iota
+	DuplicateModeKeepFirst
+	DuplicateModeKeepLast
+)
+
 type StrictParams struct {
 	Mode int
 }
 
+type DuplicateParams struct {
+	Mode int
+}
+
+type DuplicateAttributeError struct {
+	Key, Value string
+}
+
+func NewDuplicateAttribute(k, v string) DuplicateAttributeError {
+	return DuplicateAttributeError{Key: k, Value: v}
+}
+
+func (err DuplicateAttributeError) Error() string {
+	return fmt.Sprintf("duplicate attribute %s: %s", err.Key, err.Value)
+}
+
 type Gocal struct {
-	scanner    *bufio.Scanner
-	Events     []Event
-	SkipBounds bool
-	Strict     StrictParams
-	buffer     *Event
-	Start      *time.Time
-	End        *time.Time
-	Method     string
-	calenderTZ *time.Location
+	scanner        *bufio.Scanner
+	Events         []Event
+	SkipBounds     bool
+	Strict         StrictParams
+	Duplicate      DuplicateParams
+	buffer         *Event
+	Start          *time.Time
+	End            *time.Time
+	Method         string
+	AllDayEventsTZ *time.Location
 }
 
 const (
@@ -59,7 +83,7 @@ func (gc *Gocal) IsInRange(d Event) bool {
 func (gc *Gocal) IsRecurringInstanceOverriden(instance *Event) bool {
 	for _, e := range gc.Events {
 		if e.Uid == instance.Uid {
-			rid, _ := parser.ParseTime(e.RecurrenceID, map[string]string{}, parser.TimeStart, false, gc.calenderTZ)
+			rid, _ := parser.ParseTime(e.RecurrenceID, e.RawStart.Params, parser.TimeStart, false, gc.AllDayEventsTZ)
 			if rid.Equal(*instance.Start) {
 				return true
 			}
@@ -118,13 +142,14 @@ type Event struct {
 	Attachments          []Attachment
 	IsRecurring          bool
 	RecurrenceID         string
-	RecurrenceRuleParams map[string]string
-	recurrenceRuleString string
+	RecurrenceRule       map[string]string
+	RecurrenceRuleString string
 	ExcludeDates         []time.Time
 	Sequence             int
 	CustomAttributes     map[string]string
 	Valid                bool
 	Comment              string
+	Class                string
 }
 
 type Geo struct {

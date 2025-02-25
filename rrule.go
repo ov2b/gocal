@@ -5,7 +5,7 @@ import (
 )
 
 func (gc *Gocal) ExpandRecurringEvent(buf *Event) ([]Event, error) {
-	rOption, err := rrule.StrToROptionInLocation(buf.recurrenceRuleString,
+	rOption, err := rrule.StrToROptionInLocation(buf.RecurrenceRuleString,
 		buf.Start.Location())
 	if err != nil {
 		return nil, err

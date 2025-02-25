@@ -16,14 +16,11 @@ var (
 	TZMapper func(s string) (*time.Location, error)
 )
 
-var (
-	LocalTz *time.Location = time.UTC
-)
-
-func ParseTime(s string, params map[string]string, ty int, allday bool, calendarTz *time.Location) (*time.Time, error) {
+func ParseTime(s string, params map[string]string, ty int, allday bool, allDayTZ *time.Location) (*time.Time, error) {
 	var err error
 	var parseTz *time.Location
-	var resultTz = calendarTz
+	var resultTz = allDayTZ
+
 	format := ""
 
 	if params["VALUE"] == "DATE" || len(s) == 8 {
@@ -33,12 +30,12 @@ func ParseTime(s string, params map[string]string, ty int, allday bool, calendar
 		*/
 		t, err := time.Parse("20060102", s)
 		if ty == TimeStart {
-			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, LocalTz)
+			t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, allDayTZ)
 		} else if ty == TimeEnd {
 			if allday {
-				t = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999, LocalTz)
+				t = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999, allDayTZ)
 			} else {
-				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, LocalTz).Add(-1 * time.Millisecond)
+				t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, allDayTZ).Add(-1 * time.Millisecond)
 			}
 		}
 
@@ -62,7 +59,7 @@ func ParseTime(s string, params map[string]string, ty int, allday bool, calendar
 		}
 
 		if err != nil {
-			parseTz = calendarTz
+			parseTz, _ = time.LoadLocation("UTC")
 		}
 		resultTz = parseTz // TZID overrides calendar's TZ
 	} else {
