@@ -8,12 +8,6 @@ Event are parsed between two given dates (`Gocal.Start` and `Gocal.End`, 3 month
 
 This version of the parser adds the [parsing of calender timezone from gelin](https://github.com/gelin/gocal/tree/timezone) to a newer version of [apognu's gocal parser](https://github.com/apognu/gocal) because i needed both calender timezones and the option to add a custom TZMapper.
 
-It also adds the option to set a LocalTimezone to the Parser like this:
-
-```go
-gocal.SetLocalTimezone(*time.Location)
-```
-
 This timezone will be added to all `DTSART` and `DTEND` values that are specified with a `DATE` type instead of `DATE-TIME`.
 
 ## Usage
@@ -85,9 +79,9 @@ By default, any error in parsing an event will result in the whole feed being ab
 
 The behavior when an attribute is duplicated can be customized with the `Duplicate.Mode` field. The default is to follow the configured strict mode behavior, but you can relax those rule by instructing `Gocal` to keep either the first or last value.
 
- * `DuplicateModeFailStrict`
- * `DuplicateModeKeepFirst`
- * `DuplicateModeKeepLast`
+- `DuplicateModeFailStrict`
+- `DuplicateModeKeepFirst`
+- `DuplicateModeKeepLast`
 
 ## Limitations
 
